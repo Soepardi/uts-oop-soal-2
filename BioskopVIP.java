@@ -2,30 +2,23 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BioskopVIP {
-    private static final int BARIS = 5;
-    private static final int KOLOM = 6;
+    // Warna Modern Dark Theme
+    private final Color COLOR_SEAT_AVAILABLE = new Color(34, 197, 94); 
+    private final Color COLOR_SEAT_SELECTED = new Color(59, 130, 246);  
+    private final Color COLOR_SEAT_OCCUPIED = new Color(63, 63, 70);     
+    private final Color COLOR_ACCENT = new Color(59, 130, 246);          
+    private final Color COLOR_DANGER = new Color(239, 68, 68);           
+    private final Color COLOR_SUCCESS = new Color(34, 197, 94);          
+    private final Color COLOR_HEADER = new Color(18, 18, 18);            
+    private final Color COLOR_BACKGROUND = new Color(24, 24, 27);        
+    private final Color COLOR_CARD = new Color(32, 32, 35);              
+    private final Color COLOR_TEXT_PRIMARY = new Color(244, 244, 245);    
+    private final Color COLOR_TEXT_SECONDARY = new Color(161, 161, 170);  
+    private final Color COLOR_BORDER = new Color(48, 48, 51);            
 
-    // Warna Modern Dark Theme (Neutral Zinc / Slate Theme yang disempurnakan)
-    private final Color COLOR_SEAT_AVAILABLE = new Color(34, 197, 94); // Green-500
-    private final Color COLOR_SEAT_SELECTED = new Color(59, 130, 246);  // Blue-500
-    private final Color COLOR_SEAT_OCCUPIED = new Color(63, 63, 70);     // Zinc-700
-    private final Color COLOR_ACCENT = new Color(59, 130, 246);          // Blue-500
-    private final Color COLOR_DANGER = new Color(239, 68, 68);           // Red-500
-    private final Color COLOR_SUCCESS = new Color(34, 197, 94);          // Green-500
-    private final Color COLOR_HEADER = new Color(18, 18, 18);            // Zinc-950
-    private final Color COLOR_BACKGROUND = new Color(24, 24, 27);        // Zinc-900
-    private final Color COLOR_CARD = new Color(32, 32, 35);              // Zinc-850
-    private final Color COLOR_TEXT_PRIMARY = new Color(244, 244, 245);    // Zinc-100
-    private final Color COLOR_TEXT_SECONDARY = new Color(161, 161, 170);  // Zinc-400
-    private final Color COLOR_BORDER = new Color(48, 48, 51);            // Zinc-800
-
-    private boolean[][] kursi = new boolean[BARIS][KOLOM];
-    private boolean[][] kursiDipilih = new boolean[BARIS][KOLOM];
-    private List<String> dataPemesanan = new ArrayList<>();
+    private BioskopLogic logic;
 
     private JFrame frame;
     private JPanel panelKursi;
@@ -33,9 +26,9 @@ public class BioskopVIP {
     private javax.swing.table.DefaultTableModel modelTabel;
     private JTable tabelRiwayat;
     private JLabel labelTotal;
-    private int totalHarga = 0;
 
     public BioskopVIP() {
+        logic = new BioskopLogic();
         initializeGUI();
     }
 
@@ -122,18 +115,18 @@ public class BioskopVIP {
         panelJudulKursi.add(labelJudulKursi, BorderLayout.WEST);
         panelJudulKursi.add(panelLegend, BorderLayout.EAST);
 
-        panelKursi = new JPanel(new GridLayout(BARIS + 1, KOLOM + 1, 15, 15));
+        panelKursi = new JPanel(new GridLayout(BioskopLogic.BARIS + 1, BioskopLogic.KOLOM + 1, 15, 15));
         panelKursi.setBackground(COLOR_BACKGROUND);
         panelKursi.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
-        tombolKursi = new JButton[BARIS][KOLOM];
+        tombolKursi = new JButton[BioskopLogic.BARIS][BioskopLogic.KOLOM];
 
         // Header kolom
         JLabel labelKosong = new JLabel("");
         labelKosong.setHorizontalAlignment(SwingConstants.CENTER);
         panelKursi.add(labelKosong);
 
-        for (int kol = 0; kol < KOLOM; kol++) {
+        for (int kol = 0; kol < BioskopLogic.KOLOM; kol++) {
             JLabel labelKolom = new JLabel(String.valueOf(kol + 1));
             labelKolom.setHorizontalAlignment(SwingConstants.CENTER);
             labelKolom.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -142,15 +135,15 @@ public class BioskopVIP {
         }
 
         // Tombol kursi
-        for (int bar = 0; bar < BARIS; bar++) {
+        for (int bar = 0; bar < BioskopLogic.BARIS; bar++) {
             JLabel labelBaris = new JLabel(String.valueOf((char) ('A' + bar)));
             labelBaris.setHorizontalAlignment(SwingConstants.CENTER);
             labelBaris.setFont(new Font("Segoe UI", Font.BOLD, 14));
             labelBaris.setForeground(COLOR_TEXT_SECONDARY);
             panelKursi.add(labelBaris);
 
-            for (int kol = 0; kol < KOLOM; kol++) {
-                tombolKursi[bar][kol] = createSeatButton(getNamaKursi(bar, kol), bar, kol);
+            for (int kol = 0; kol < BioskopLogic.KOLOM; kol++) {
+                tombolKursi[bar][kol] = createSeatButton(logic.getNamaKursi(bar, kol), bar, kol);
 
                 final int barisFinal = bar;
                 final int kolomFinal = kol;
@@ -199,7 +192,7 @@ public class BioskopVIP {
         panelKontrol.setBackground(COLOR_BACKGROUND);
         panelKontrol.setBorder(BorderFactory.createEmptyBorder(25, 15, 25, 30));
 
-        // Panel Info Harga - Card Style
+        // Panel Info Harga
         JPanel panelHarga = createCardPanel();
         panelHarga.setLayout(new BorderLayout(0, 15));
 
@@ -223,7 +216,7 @@ public class BioskopVIP {
         panelHarga.add(panelDaftarHarga, BorderLayout.CENTER);
         panelHarga.add(labelTotal, BorderLayout.SOUTH);
 
-        // Panel Log - Card Style
+        // Panel Log
         JPanel panelLog = createCardPanel();
         panelLog.setLayout(new BorderLayout(0, 12));
 
@@ -249,7 +242,6 @@ public class BioskopVIP {
         tabelRiwayat.setFocusable(false);
         tabelRiwayat.setRowSelectionAllowed(false);
 
-        // Styling header tabel agar modern
         tabelRiwayat.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         tabelRiwayat.getTableHeader().setBackground(COLOR_HEADER);
         tabelRiwayat.getTableHeader().setForeground(COLOR_TEXT_PRIMARY);
@@ -268,7 +260,7 @@ public class BioskopVIP {
         panelLog.add(labelJudulLog, BorderLayout.NORTH);
         panelLog.add(panelLogContent, BorderLayout.CENTER);
 
-        // Panel Tombol - Modern
+        // Panel Tombol
         JPanel panelTombol = new JPanel(new GridLayout(1, 2, 15, 0));
         panelTombol.setOpaque(false);
         panelTombol.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
@@ -279,8 +271,8 @@ public class BioskopVIP {
         JButton btnKeluar = createActionButton("KELUAR", COLOR_DANGER);
         btnKeluar.addActionListener(e -> keluarAplikasi());
 
-        panelTombol.add(btnPesan); // kiri
-        panelTombol.add(btnKeluar); // kanan
+        panelTombol.add(btnPesan); 
+        panelTombol.add(btnKeluar); 
 
         panelKontrol.add(panelHarga, BorderLayout.NORTH);
         panelKontrol.add(panelLog, BorderLayout.CENTER);
@@ -339,34 +331,34 @@ public class BioskopVIP {
     }
 
     private void togglePilihKursi(int baris, int kolom) {
-        if (kursi[baris][kolom]) {
+        if (logic.isKursiTerisi(baris, kolom)) {
             JOptionPane.showMessageDialog(frame,
-                    "Kursi " + getNamaKursi(baris, kolom) + " sudah terisi.",
+                    "Kursi " + logic.getNamaKursi(baris, kolom) + " sudah terisi.",
                     "Peringatan",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        kursiDipilih[baris][kolom] = !kursiDipilih[baris][kolom];
+        logic.togglePilihKursi(baris, kolom);
         updateTampilanKursi(baris, kolom);
         updatePreviewHarga();
     }
 
     private void updateTampilanKursi(int baris, int kolom) {
-        if (kursi[baris][kolom]) {
+        if (logic.isKursiTerisi(baris, kolom)) {
             tombolKursi[baris][kolom].setText("X");
             tombolKursi[baris][kolom].setBackground(COLOR_SEAT_OCCUPIED);
             tombolKursi[baris][kolom].setForeground(COLOR_TEXT_PRIMARY);
             tombolKursi[baris][kolom].setFont(new Font("Segoe UI", Font.BOLD, 18));
             tombolKursi[baris][kolom].setEnabled(false);
             tombolKursi[baris][kolom].setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        } else if (kursiDipilih[baris][kolom]) {
+        } else if (logic.isKursiDipilih(baris, kolom)) {
             tombolKursi[baris][kolom].setText("X");
             tombolKursi[baris][kolom].setBackground(COLOR_SEAT_SELECTED);
             tombolKursi[baris][kolom].setForeground(COLOR_TEXT_PRIMARY);
             tombolKursi[baris][kolom].setFont(new Font("Segoe UI", Font.BOLD, 18));
         } else {
-            tombolKursi[baris][kolom].setText(getNamaKursi(baris, kolom));
+            tombolKursi[baris][kolom].setText(logic.getNamaKursi(baris, kolom));
             tombolKursi[baris][kolom].setBackground(COLOR_SEAT_AVAILABLE);
             tombolKursi[baris][kolom].setForeground(COLOR_HEADER);
             tombolKursi[baris][kolom].setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -376,23 +368,14 @@ public class BioskopVIP {
     }
 
     private void updatePreviewHarga() {
-        int totalSementara = 0;
-        int jumlahDipilih = 0;
-
-        for (int bar = 0; bar < BARIS; bar++) {
-            for (int kol = 0; kol < KOLOM; kol++) {
-                if (kursiDipilih[bar][kol]) {
-                    totalSementara += hitungHarga(bar + 1);
-                    jumlahDipilih++;
-                }
-            }
-        }
+        int totalSementara = logic.getTotalHargaSementara();
+        int jumlahDipilih = logic.getJumlahDipilih();
 
         if (jumlahDipilih > 0) {
             labelTotal.setText("TOTAL: Rp " + String.format("%,d", totalSementara) +
                     " (" + jumlahDipilih + " kursi)");
         } else {
-            labelTotal.setText("TOTAL: Rp " + String.format("%,d", totalHarga));
+            labelTotal.setText("TOTAL: Rp 0");
         }
     }
 
@@ -414,19 +397,19 @@ public class BioskopVIP {
 
         button.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                if (button.isEnabled() && !kursi[finalBaris][finalKolom] && !kursiDipilih[finalBaris][finalKolom]) {
+                if (button.isEnabled() && !logic.isKursiTerisi(finalBaris, finalKolom) && !logic.isKursiDipilih(finalBaris, finalKolom)) {
                     button.setBackground(new Color(22, 163, 74));
-                } else if (button.isEnabled() && !kursi[finalBaris][finalKolom]
-                        && kursiDipilih[finalBaris][finalKolom]) {
+                } else if (button.isEnabled() && !logic.isKursiTerisi(finalBaris, finalKolom)
+                        && logic.isKursiDipilih(finalBaris, finalKolom)) {
                     button.setBackground(new Color(37, 99, 235));
                 }
             }
 
             public void mouseExited(MouseEvent e) {
-                if (button.isEnabled() && !kursi[finalBaris][finalKolom] && !kursiDipilih[finalBaris][finalKolom]) {
+                if (button.isEnabled() && !logic.isKursiTerisi(finalBaris, finalKolom) && !logic.isKursiDipilih(finalBaris, finalKolom)) {
                     button.setBackground(COLOR_SEAT_AVAILABLE);
-                } else if (button.isEnabled() && !kursi[finalBaris][finalKolom]
-                        && kursiDipilih[finalBaris][finalKolom]) {
+                } else if (button.isEnabled() && !logic.isKursiTerisi(finalBaris, finalKolom)
+                        && logic.isKursiDipilih(finalBaris, finalKolom)) {
                     button.setBackground(COLOR_SEAT_SELECTED);
                 }
             }
@@ -458,90 +441,17 @@ public class BioskopVIP {
         return button;
     }
 
-    private String getNamaKursi(int baris, int kolom) {
-        char barisChar = (char) ('A' + baris);
-        return String.valueOf(barisChar) + (kolom + 1);
-    }
-
-    private void pesanKursi(int baris, int kolom, boolean tampilkanKonfirmasi) {
-        if (kursi[baris][kolom]) {
-            JOptionPane.showMessageDialog(frame,
-                    "Kursi " + getNamaKursi(baris, kolom) + " sudah terisi.",
-                    "Peringatan",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        int harga = hitungHarga(baris + 1);
-        boolean lanjutkan = true;
-        String namaKursi = getNamaKursi(baris, kolom);
-
-        if (tampilkanKonfirmasi) {
-            int konfirmasi = JOptionPane.showConfirmDialog(frame,
-                    "Anda akan memesan kursi " + namaKursi + "\n" +
-                            "Harga: Rp " + String.format("%,d", harga) + "\n\n" +
-                            "Lanjutkan pemesanan?",
-                    "Konfirmasi",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE);
-
-            lanjutkan = (konfirmasi == JOptionPane.YES_OPTION);
-        }
-
-        if (lanjutkan) {
-            kursi[baris][kolom] = true;
-            kursiDipilih[baris][kolom] = false;
-
-            tombolKursi[baris][kolom].setText("✗");
-            tombolKursi[baris][kolom].setBackground(COLOR_SEAT_OCCUPIED);
-            tombolKursi[baris][kolom].setEnabled(false);
-            tombolKursi[baris][kolom].setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-
-            totalHarga += harga;
-            labelTotal.setText("TOTAL: Rp " + String.format("%,d", totalHarga));
-
-            String waktu = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-            String hargaStr = "Rp " + String.format("%,d", harga);
-
-            // Tambahkan baris ke tabel
-            modelTabel.addRow(new Object[]{waktu, namaKursi, hargaStr});
-
-            String data = "[" + waktu + "] Kursi " + namaKursi + " | " + hargaStr;
-            dataPemesanan.add(data);
-
-            if (tampilkanKonfirmasi) {
-                JOptionPane.showMessageDialog(frame,
-                        "Pemesanan berhasil.\n" +
-                                "Kursi " + namaKursi + " telah dicadangkan.",
-                        "Sukses",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
-    }
-
-    private int hitungHarga(int baris) {
-        if (baris == 1 || baris == 2) {
-            return 100000;
-        } else if (baris == 3 || baris == 4) {
-            return 75000;
-        } else {
-            return 50000;
-        }
-    }
-
     private void tampilkanDialogPesan() {
-        int jumlahDipilih = 0;
-        int totalHargaSementara = 0;
+        int jumlahDipilih = logic.getJumlahDipilih();
+        int totalHargaSementara = logic.getTotalHargaSementara();
         StringBuilder daftarKursi = new StringBuilder();
 
-        for (int bar = 0; bar < BARIS; bar++) {
-            for (int kol = 0; kol < KOLOM; kol++) {
-                if (kursiDipilih[bar][kol]) {
-                    jumlahDipilih++;
-                    int harga = hitungHarga(bar + 1);
-                    totalHargaSementara += harga;
-                    daftarKursi.append("  • Kursi " + getNamaKursi(bar, kol) +
-                            " | Rp " + String.format("%,d", harga) + "\n");
+        for (int bar = 0; bar < BioskopLogic.BARIS; bar++) {
+            for (int kol = 0; kol < BioskopLogic.KOLOM; kol++) {
+                if (logic.isKursiDipilih(bar, kol)) {
+                    int harga = logic.getHarga(bar + 1);
+                    daftarKursi.append("  • Kursi ").append(logic.getNamaKursi(bar, kol))
+                            .append(" | Rp ").append(String.format("%,d", harga)).append("\n");
                 }
             }
         }
@@ -586,17 +496,21 @@ public class BioskopVIP {
                 JOptionPane.QUESTION_MESSAGE);
 
         if (konfirmasi == JOptionPane.YES_OPTION) {
-            for (int bar = 0; bar < BARIS; bar++) {
-                for (int kol = 0; kol < KOLOM; kol++) {
-                    if (kursiDipilih[bar][kol]) {
-                        pesanKursi(bar, kol, false);
+            for (int bar = 0; bar < BioskopLogic.BARIS; bar++) {
+                for (int kol = 0; kol < BioskopLogic.KOLOM; kol++) {
+                    if (logic.isKursiDipilih(bar, kol)) {
+                        String[] data = logic.pesanKursi(bar, kol);
+                        if (data != null) {
+                            modelTabel.addRow(data);
+                        }
                     }
                 }
             }
 
-            for (int bar = 0; bar < BARIS; bar++) {
-                for (int kol = 0; kol < KOLOM; kol++) {
-                    kursiDipilih[bar][kol] = false;
+            labelTotal.setText("TOTAL: Rp 0");
+
+            for (int bar = 0; bar < BioskopLogic.BARIS; bar++) {
+                for (int kol = 0; kol < BioskopLogic.KOLOM; kol++) {
                     updateTampilanKursi(bar, kol);
                 }
             }
@@ -610,21 +524,21 @@ public class BioskopVIP {
     }
 
     private void keluarAplikasi() {
-        int kursiTerisi = hitungKursiTerisi();
-        int totalKursi = BARIS * KOLOM;
+        int kursiTerisi = logic.hitungKursiTerisi();
+        int totalKursi = BioskopLogic.BARIS * BioskopLogic.KOLOM;
 
         StringBuilder ringkasan = new StringBuilder();
         ringkasan.append("RINGKASAN PEMESANAN\n");
         ringkasan.append("=====================\n\n");
-        ringkasan.append("Total Kursi  : " + totalKursi + "\n");
-        ringkasan.append("Terisi       : " + kursiTerisi + "\n");
-        ringkasan.append("Kosong       : " + (totalKursi - kursiTerisi) + "\n");
-        ringkasan.append("Total Harga  : Rp " + String.format("%,d", totalHarga) + "\n\n");
+        ringkasan.append("Total Kursi  : ").append(totalKursi).append("\n");
+        ringkasan.append("Terisi       : ").append(kursiTerisi).append("\n");
+        ringkasan.append("Kosong       : ").append(totalKursi - kursiTerisi).append("\n");
+        ringkasan.append("Total Harga  : Rp ").append(String.format("%,d", logic.getTotalHarga())).append("\n\n");
 
-        if (!dataPemesanan.isEmpty()) {
+        if (!logic.getDataPemesanan().isEmpty()) {
             ringkasan.append("Detail:\n");
-            for (String data : dataPemesanan) {
-                ringkasan.append("  - " + data + "\n");
+            for (String data : logic.getDataPemesanan()) {
+                ringkasan.append("  - ").append(data).append("\n");
             }
         } else {
             ringkasan.append("Tidak ada pemesanan.\n");
@@ -648,18 +562,6 @@ public class BioskopVIP {
                 JOptionPane.INFORMATION_MESSAGE);
 
         System.exit(0);
-    }
-
-    private int hitungKursiTerisi() {
-        int count = 0;
-        for (int bar = 0; bar < BARIS; bar++) {
-            for (int kol = 0; kol < KOLOM; kol++) {
-                if (kursi[bar][kol]) {
-                    count++;
-                }
-            }
-        }
-        return count;
     }
 
     public static void main(String[] args) {
